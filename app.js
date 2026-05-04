@@ -733,6 +733,7 @@ async function fetchEciData() {
   }
   renderSidebar();
   renderTicker();
+  checkVictory();
 }
 
 function liveUpdate() {
@@ -772,6 +773,7 @@ function liveUpdate() {
   renderSidebar();
   renderDistricts();
   renderDetail();
+  checkVictory();
 }
 
 document.querySelectorAll(".seg-btn").forEach((button) => {
@@ -816,3 +818,156 @@ renderAll();
 fetchEciData();
 setInterval(fetchEciData, 120000);
 setInterval(liveUpdate, 8000);
+
+// ── Victory animation ────────────────────────────────────────────────────────
+
+const victoryState = { shown: false, raf: null };
+
+function findWinner() {
+  if (state.eci?.parties?.length) {
+    const top = [...state.eci.parties].sort((a, b) => b.total - a.total)[0];
+    if (top?.total >= 148) return { party: top.party, seats: top.total, color: partyColor(top.party) || "#00b44f" };
+    return null;
+  }
+  const { won } = computeTotals();
+  const top = Object.entries(won).sort((a, b) => b[1] - a[1])[0];
+  if (top && top[1] >= 148) return { party: top[0], seats: top[1], color: partyColor(top[0]) };
+  return null;
+}
+
+function checkVictory() {
+  if (victoryState.shown) return;
+
+  const pending = state.eci?.parties?.length
+    ? Math.max(0, 294 - state.eci.parties.reduce((s, r) => s + (r.total || 0), 0))
+    : countingStats().pending;
+
+  if (pending > 0) return;
+
+  const winner = findWinner();
+  if (!winner) return;
+
+  victoryState.shown = true;
+  triggerVictory(winner);
+}
+
+function triggerVictory({ party, seats, color }) {
+  const screen = document.getElementById("victory-screen");
+  screen.style.setProperty("--v-color", color);
+  document.getElementById("v-abbr").textContent = party;
+  document.getElementById("v-fullname").textContent = PARTIES[party]?.full || party;
+  document.getElementById("v-seats").textContent = seats;
+  screen.classList.add("v-active");
+  startConfetti(color);
+}
+
+document.getElementById("v-dismiss").addEventListener("click", () => {
+  const screen = document.getElementById("victory-screen");
+  screen.style.transition = "opacity 0.5s ease";
+  screen.style.opacity = "0";
+  setTimeout(() => {
+    screen.style.pointerEvents = "none";
+    stopConfetti();
+  }, 500);
+});
+
+// ── Confetti engine ──────────────────────────────────────────────────────────
+
+const CONFETTI_COUNT = 160;
+let confettiParticles = [];
+let confettiRunning = false;
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return [r, g, b];
+}
+
+function startConfetti(partyColor) {
+  const canvas = document.getElementById("confetti-canvas");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext("2d");
+
+  const [pr, pg, pb] = hexToRgb(partyColor);
+  const colors = [
+    partyColor,
+    `rgba(255,255,255,0.9)`,
+    `rgba(${pr},${pg},${pb},0.55)`,
+    `rgba(${Math.min(pr + 60, 255)},${Math.min(pg + 60, 255)},${Math.min(pb + 60, 255)},0.8)`,
+    `rgba(255,255,255,0.5)`
+  ];
+
+  confettiParticles = Array.from({ length: CONFETTI_COUNT }, () => ({
+    x: Math.random() * canvas.width,
+    y: -Math.random() * canvas.height * 0.6,
+    w: 7 + Math.random() * 9,
+    h: 4 + Math.random() * 5,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    vx: (Math.random() - 0.5) * 2.2,
+    vy: 1.8 + Math.random() * 3.2,
+    angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.18,
+    opacity: 0.7 + Math.random() * 0.3
+  }));
+
+  confettiRunning = true;
+
+  // Throttle to ~30 fps so the renderer stays responsive
+  const FRAME_INTERVAL = 1000 / 30;
+  let lastFrame = 0;
+
+  function draw(timestamp) {
+    if (!confettiRunning) return;
+    if (timestamp - lastFrame < FRAME_INTERVAL) {
+      victoryState.raf = requestAnimationFrame(draw);
+      return;
+    }
+    lastFrame = timestamp;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    confettiParticles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.055;
+      p.angle += p.spin;
+      // Recycle when off-screen
+      if (p.y > canvas.height + 20) {
+        p.y = -20;
+        p.x = Math.random() * canvas.width;
+        p.vy = 1.8 + Math.random() * 3.2;
+      }
+      ctx.save();
+      ctx.globalAlpha = p.opacity;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+
+    victoryState.raf = requestAnimationFrame(draw);
+  }
+
+  // Start after wave + content animation, auto-stop after 10 s
+  const startTimer = setTimeout(() => {
+    victoryState.raf = requestAnimationFrame(draw);
+  }, 2200);
+  setTimeout(stopConfetti, 12200);
+
+  victoryState.startTimer = startTimer;
+}
+
+function stopConfetti() {
+  confettiRunning = false;
+  if (victoryState.raf) { cancelAnimationFrame(victoryState.raf); victoryState.raf = null; }
+  if (victoryState.startTimer) { clearTimeout(victoryState.startTimer); victoryState.startTimer = null; }
+  const canvas = document.getElementById("confetti-canvas");
+  if (canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+}
+
+window.addEventListener("resize", () => {
+  const canvas = document.getElementById("confetti-canvas");
+  if (canvas) { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+});
