@@ -4,10 +4,20 @@ services:
     runtime: node
     region: singapore
     plan: free
-    buildCommand: npm install
+    buildCommand: |
+      apt-get install -y \
+        libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+        libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+        libgbm1 libasound2 libpangocairo-1.0-0 libpango-1.0-0 libcairo2 \
+        libatspi2.0-0 libgtk-3-0 2>/dev/null || true
+      npm install
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
-        value: 20
+        value: "20"
       - key: ECI_RESULTS_URL
         value: https://results.eci.gov.in/ResultAcGenMay2026/partywiseresult-S25.htm
+      - key: SCRAPE_INTERVAL_MS
+        value: "90000"
+      - key: PUPPETEER_CACHE_DIR
+        value: /opt/render/.cache/puppeteer

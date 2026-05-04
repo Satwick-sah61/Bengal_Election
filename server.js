@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const https = require("https");
 const path = require("path");
+const { spawn } = require("child_process");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4173);
@@ -239,8 +240,40 @@ http.createServer((req, res) => {
   });
 }).listen(port, host, () => {
   console.log(`Bengal election dashboard on http://${host}:${port}`);
-  console.log(`  Data sources (in priority order):`);
-  console.log(`  1. ${RESULTS_FILE} (POST to /api/results or edit manually)`);
-  console.log(`  2. ECI_RESULTS_URL=${ECI_RESULTS_URL || "(not set)"}`);
-  console.log(`  3. Simulation fallback (frontend)`);
+  if (ECI_RESULTS_URL) startScraper();
 });
+
+// --- scraper subprocess management ---
+const SCRAPE_INTERVAL_MS = Number(process.env.SCRAPE_INTERVAL_MS || 90000); // 90 s default
+let scraperRunning = false;
+
+function startScraper() {
+  if (scraperRunning) return;
+  runScraper();
+  setInterval(runScraper, SCRAPE_INTERVAL_MS);
+}
+
+function runScraper() {
+  if (scraperRunning) return;
+  // Check if scraper.js exists
+  const scraperPath = path.join(root, "scraper.js");
+  if (!fs.existsSync(scraperPath)) {
+    console.warn("[server] scraper.js not found — skipping");
+    return;
+  }
+  scraperRunning = true;
+  console.log("[server] Starting scraper…");
+  const child = spawn(process.execPath, [scraperPath], {
+    env: { ...process.env },
+    stdio: ["ignore", "inherit", "inherit"]
+  });
+  child.on("exit", (code) => {
+    scraperRunning = false;
+    if (code === 0) console.log("[server] Scraper finished OK");
+    else console.warn(`[server] Scraper exited with code ${code}`);
+  });
+  child.on("error", (err) => {
+    scraperRunning = false;
+    console.error(`[server] Failed to start scraper: ${err.message}`);
+  });
+}
