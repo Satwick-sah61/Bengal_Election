@@ -3,3 +3,4 @@ npm-debug.log*
 server.log
 server.err
 .env
+.puppeteer-cache/
