@@ -79,6 +79,20 @@ function parsePartyRows(html) {
       }
     }
   }
+  if (rows.length) return rows;
+
+  const text = cleanText(html);
+  const section = text.split("Party Wise Results").pop()?.split("Constituency Wise Results")[0] || "";
+  const fallbackRe = /([A-Za-z][A-Za-z ().'-]+ - [A-Z()]+)\s+(\d+)\s+(\d+)\s+(\d+)/g;
+  while ((match = fallbackRe.exec(section))) {
+    rows.push({
+      party: match[1].split(" - ").pop().trim(),
+      name: match[1].trim(),
+      won: Number(match[2]),
+      leading: Number(match[3]),
+      total: Number(match[4])
+    });
+  }
   return rows;
 }
 

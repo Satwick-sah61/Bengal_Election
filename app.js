@@ -456,6 +456,24 @@ function renderMap() {
 }
 
 function renderSidebar() {
+  if (state.eci?.configured && !state.eci.parties?.length) {
+    document.getElementById("cnt-declared").textContent = "0";
+    document.getElementById("cnt-counting").textContent = "0";
+    document.getElementById("cnt-pending").textContent = "294";
+    document.getElementById("mobile-declared").textContent = "0";
+    document.getElementById("mobile-counting").textContent = "0";
+    document.getElementById("mobile-pending").textContent = "294";
+    document.getElementById("overall-fill").style.width = "0%";
+    document.getElementById("round-copy").textContent = state.eci.error ? `ECI error: ${state.eci.error}` : "Waiting for official ECI data";
+    document.getElementById("seats-bar").innerHTML = "";
+    document.getElementById("party-stats").innerHTML = `
+      <div class="detail-empty">
+        Official ECI source is configured, but no party table was available yet.
+      </div>
+    `;
+    return;
+  }
+
   if (state.eci?.configured && state.eci.parties?.length) {
     const totalSeats = state.eci.parties.reduce((sum, row) => sum + (row.total || 0), 0) || 294;
     const declared = state.eci.parties.reduce((sum, row) => sum + (row.won || 0), 0);
