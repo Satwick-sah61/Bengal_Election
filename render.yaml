@@ -18,7 +18,6 @@ services:
       libatspi2.0-0 libgtk-3-0
       libasound2 2>/dev/null || true ;
       npm install &&
-      PUPPETEER_CACHE_DIR=/opt/render/project/src/.puppeteer-cache
       npx puppeteer browsers install chrome
     startCommand: npm start
     envVars:
@@ -28,5 +27,3 @@ services:
         value: https://results.eci.gov.in/ResultAcGenMay2026/partywiseresult-S25.htm
       - key: SCRAPE_INTERVAL_MS
         value: "90000"
-      - key: PUPPETEER_CACHE_DIR
-        value: /opt/render/project/src/.puppeteer-cache
