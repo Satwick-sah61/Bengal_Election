@@ -5,9 +5,14 @@
   "description": "Responsive West Bengal election live results dashboard.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "scrape": "node scraper.js",
+    "scrape:watch": "node scraper.js --watch 90"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "puppeteer": "^22.0.0"
   }
 }
