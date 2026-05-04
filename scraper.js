@@ -89,14 +89,18 @@ async function scrape() {
   console.log(`[scraper] Launching browser → ${ECI_URL}`);
   const browser = await puppeteer.launch({
     headless: "new",
+    // On Render the cache is set via PUPPETEER_CACHE_DIR env var;
+    // executablePath falls back to Puppeteer's bundled Chrome automatically.
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-gpu",
       "--disable-dev-shm-usage",
       "--disable-extensions",
-      "--single-process",        // important for Render free tier
-      "--no-zygote"
+      "--single-process",   // critical for Render free tier (512 MB RAM)
+      "--no-zygote",
+      "--disable-background-networking",
+      "--disable-default-apps"
     ]
   });
 
