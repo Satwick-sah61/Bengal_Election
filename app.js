@@ -82,6 +82,8 @@ const state = {
   view: "ac",
   selectedType: null,
   selectedId: null,
+  eci: null,
+  eciReady: false,
   openDistricts: new Set(),
   ticks: [
     "Counting begins across <b>294 constituencies</b> in West Bengal",
@@ -454,6 +456,50 @@ function renderMap() {
 }
 
 function renderSidebar() {
+  if (state.eci?.configured && state.eci.parties?.length) {
+    const totalSeats = state.eci.parties.reduce((sum, row) => sum + (row.total || 0), 0) || 294;
+    const declared = state.eci.parties.reduce((sum, row) => sum + (row.won || 0), 0);
+    const leading = state.eci.parties.reduce((sum, row) => sum + (row.leading || 0), 0);
+    const pending = Math.max(0, totalSeats - declared - leading);
+
+    document.getElementById("cnt-declared").textContent = declared;
+    document.getElementById("cnt-counting").textContent = leading;
+    document.getElementById("cnt-pending").textContent = pending;
+    document.getElementById("mobile-declared").textContent = declared;
+    document.getElementById("mobile-counting").textContent = leading;
+    document.getElementById("mobile-pending").textContent = pending;
+    document.getElementById("overall-fill").style.width = `${(declared / totalSeats * 100).toFixed(1)}%`;
+    document.getElementById("round-copy").textContent = state.eci.lastUpdated || "Official ECI data";
+
+    const seatsBar = document.getElementById("seats-bar");
+    seatsBar.innerHTML = "";
+    state.eci.parties.forEach((row, index) => {
+      if (!row.total) return;
+      const party = row.party;
+      const seg = document.createElement("div");
+      seg.className = "bar-seg";
+      seg.style.width = `${(row.total / totalSeats * 100).toFixed(2)}%`;
+      seg.style.background = partyColor(party) || ["#00b44f", "#ff6a00", "#1565c0", "#cc1111", "#7b1fa2"][index % 5];
+      seg.textContent = row.total >= 10 ? row.total : "";
+      seatsBar.appendChild(seg);
+    });
+
+    const partyStats = document.getElementById("party-stats");
+    partyStats.innerHTML = "";
+    state.eci.parties.forEach((row, index) => {
+      const color = partyColor(row.party) || ["#00b44f", "#ff6a00", "#1565c0", "#cc1111", "#7b1fa2"][index % 5];
+      const el = document.createElement("div");
+      el.className = "party-row";
+      el.innerHTML = `
+        <span class="party-dot" style="background:${color}"></span>
+        <span class="party-name"><strong>${row.party}</strong><small>${row.name}</small></span>
+        <span class="party-score" style="color:${color}">${row.total}<small>${row.won}W + ${row.leading}L</small></span>
+      `;
+      partyStats.appendChild(el);
+    });
+    return;
+  }
+
   const stats = countingStats();
   ["declared", "counting", "pending"].forEach((key) => {
     document.getElementById(`cnt-${key}`).textContent = stats[key];
@@ -633,7 +679,34 @@ function addTick(message) {
   renderTicker();
 }
 
+async function fetchEciData() {
+  try {
+    const response = await fetch("/api/eci", { cache: "no-store" });
+    const data = await response.json();
+    state.eci = data;
+    if (data.configured) {
+      state.eciReady = true;
+      if (data.parties?.length) {
+        state.ticks = [
+          `Official ECI data loaded from <b>results.eci.gov.in</b>`,
+          data.lastUpdated || "Waiting for ECI update timestamp"
+        ];
+      } else {
+        state.ticks = ["Official ECI source configured, waiting for parseable results table"];
+      }
+    } else {
+      document.getElementById("round-copy").textContent = "ECI URL not configured";
+    }
+  } catch (error) {
+    state.eci = { configured: false, error: error.message };
+    document.getElementById("round-copy").textContent = "ECI fetch unavailable";
+  }
+  renderSidebar();
+  renderTicker();
+}
+
 function liveUpdate() {
+  if (state.eciReady) return;
   const notStarted = AC_DATA.filter((ac) => ac.currentRound === 0);
   const inProgress = AC_DATA.filter((ac) => ac.currentRound > 0 && !ac.won);
   const chosen = new Set();
@@ -710,4 +783,6 @@ setInterval(() => {
 window.addEventListener("resize", () => requestAnimationFrame(renderMap));
 
 renderAll();
+fetchEciData();
+setInterval(fetchEciData, 120000);
 setInterval(liveUpdate, 8000);
