@@ -9,3 +9,5 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
+      - key: ECI_RESULTS_URL
+        value: https://results.eci.gov.in/ResultAcGenMay2026/partywiseresult-S25.htm
