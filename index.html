@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>West Bengal Election 2026 - Live Results</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
   <header class="topbar">
@@ -122,6 +122,26 @@
   <div class="ticker" aria-label="Live updates">
     <strong>COUNTING</strong>
     <div><span id="ticker-inner"></span></div>
+  </div>
+
+  <!-- Victory overlay — shown when all 294 seats are declared -->
+  <div id="victory-screen" aria-live="assertive" aria-label="Election result announced">
+    <canvas id="confetti-canvas"></canvas>
+    <div class="v-wave v-wave-a"></div>
+    <div class="v-wave v-wave-b"></div>
+    <div class="v-content">
+      <p class="v-eyebrow">OFFICIAL RESULT · WEST BENGAL 2026</p>
+      <div class="v-badge" id="v-badge">
+        <span id="v-abbr"></span>
+      </div>
+      <h2 class="v-fullname" id="v-fullname"></h2>
+      <div class="v-seats-row">
+        <span class="v-seats" id="v-seats"></span>
+        <span class="v-seats-label">seats won</span>
+      </div>
+      <p class="v-majority">Majority mark: <strong>148</strong></p>
+      <button class="v-dismiss" id="v-dismiss" type="button">View Full Results ›</button>
+    </div>
   </div>
 
   <script src="app.js"></script>
