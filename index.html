@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>West Bengal Election 2026 - Live Results</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="title-block">
+      <p class="eyebrow">Live Assembly Results</p>
+      <h1>West Bengal Election 2026</h1>
+      <p class="meta">294 Constituencies · 23 Districts · Majority 148</p>
+    </div>
+
+    <div class="top-actions">
+      <div class="live-pill"><span></span>LIVE</div>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="segmented" aria-label="Map view">
+        <button class="seg-btn active" id="view-ac" type="button" data-view="ac">AC</button>
+        <button class="seg-btn" id="view-dist" type="button" data-view="dist">District</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="map-pane panel active-mobile" id="map-section" data-mobile-panel="map">
+      <div class="mobile-summary" aria-label="Election summary">
+        <div>
+          <span id="mobile-declared">0</span>
+          <small>Declared</small>
+        </div>
+        <div>
+          <span id="mobile-counting">0</span>
+          <small>Counting</small>
+        </div>
+        <div>
+          <span id="mobile-pending">294</span>
+          <small>Awaited</small>
+        </div>
+      </div>
+
+      <div class="map-toolbar">
+        <div>
+          <strong id="map-title">Constituency Map</strong>
+          <span id="selected-copy">Tap a seat or district for details</span>
+        </div>
+        <button class="icon-btn" id="reset-focus" type="button" title="Clear selection" aria-label="Clear selection">×</button>
+      </div>
+
+      <div class="map-wrap">
+        <svg id="map-svg" role="img" aria-label="West Bengal election result map"></svg>
+      </div>
+    </section>
+
+    <aside class="side-pane">
+      <section class="panel results-panel active-mobile" id="results-section" data-mobile-panel="results">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Statewide</p>
+            <h2>Current Tally</h2>
+          </div>
+          <span class="muted" id="round-copy">Round updates every 8s</span>
+        </div>
+
+        <div class="count-grid">
+          <div class="stat-card">
+            <span id="cnt-declared">0</span>
+            <small>Declared</small>
+          </div>
+          <div class="stat-card">
+            <span id="cnt-counting">0</span>
+            <small>Counting</small>
+          </div>
+          <div class="stat-card">
+            <span id="cnt-pending">294</span>
+            <small>Awaited</small>
+          </div>
+        </div>
+
+        <div class="progress-track" aria-label="Overall declared progress">
+          <div class="progress-fill" id="overall-fill"></div>
+        </div>
+
+        <div class="tally-wrap">
+          <div class="seat-bar" id="seats-bar"></div>
+          <div class="majority-line"><span></span><em>148</em></div>
+        </div>
+
+        <div class="party-list" id="party-stats"></div>
+      </section>
+
+      <section class="panel detail-panel" id="detail-panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Selected</p>
+            <h2 id="detail-title">No seat selected</h2>
+          </div>
+        </div>
+        <div id="detail-body" class="detail-empty">Choose an area on the map or in the district list.</div>
+      </section>
+
+      <section class="panel districts-panel" id="district-section" data-mobile-panel="districts">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Districts</p>
+            <h2>Seat Details</h2>
+          </div>
+        </div>
+        <div class="district-list" id="district-list"></div>
+      </section>
+    </aside>
+  </main>
+
+  <nav class="mobile-nav" aria-label="Mobile sections">
+    <button class="mobile-tab active" type="button" data-target="map">Map</button>
+    <button class="mobile-tab" type="button" data-target="results">Results</button>
+    <button class="mobile-tab" type="button" data-target="districts">Districts</button>
+  </nav>
+
+  <div class="ticker" aria-label="Live updates">
+    <strong>COUNTING</strong>
+    <div><span id="ticker-inner"></span></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
